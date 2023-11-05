@@ -23,14 +23,7 @@ pub struct Arguments {
     file_path: String,
 }
 
-pub fn run(args: Arguments) -> Result<(), Box<dyn Error>> {
-    let file_path = args.file_path.clone();
-    let line_count = match args.line_count {
-        Some(lc) => lc,
-        None => DEFAULT_LINE_COUNT,
-    };
-    let file = File::open(file_path).unwrap();
-
+fn split_by_line_count(line_count: usize, file: File) -> Result<(), Box<dyn Error>> {
     let lines = io::BufReader::new(file).lines();
     let mut write_buffer: Vec<String> = vec![];
     let mut prefix_first_char_idx: usize = 0;
@@ -70,4 +63,15 @@ pub fn run(args: Arguments) -> Result<(), Box<dyn Error>> {
         fs::write(new_filename, contents).unwrap();
     }
     Ok(())
+}
+
+pub fn run(args: Arguments) -> Result<(), Box<dyn Error>> {
+    let file_path = args.file_path.clone();
+    let line_count = match args.line_count {
+        Some(lc) => lc,
+        None => DEFAULT_LINE_COUNT,
+    };
+    let file = File::open(file_path).unwrap();
+    split_by_line_count(line_count, file)
+
 }
