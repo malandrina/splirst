@@ -1,3 +1,5 @@
 # README
 
-Coming soon! 🚧
+Learning Rust by implementing `split` 🦀
+
+🚧 WIP 🚧
