@@ -20,7 +20,54 @@ static DEFAULT_LINE_COUNT: usize = 1000;
 pub struct Arguments {
     #[clap(short, long)]
     line_count: Option<usize>,
+    #[clap(short, long)]
+    chunk_count: Option<usize>,
     file_path: String,
+}
+
+fn split_by_chunk_count(chunk_count: usize, file: File) -> Result<(), Box<dyn Error>> {
+    let file_size = file.metadata().unwrap().len();
+    let chunk_size = (file_size / chunk_count as u64) as usize;
+    let first_n_chunks_size = chunk_size * (chunk_count - 1);
+    let last_chunk_size = (file_size - first_n_chunks_size as u64) as usize;
+    let mut buf_reader = io::BufReader::with_capacity(last_chunk_size, file);
+
+    let mut counter = 0;
+    let mut prefix_first_char_idx: usize = 0;
+    let mut prefix_second_char_idx: usize = 0;
+
+    loop {
+        let length = {
+            let write_buffer = buf_reader.fill_buf()?;
+            counter += 1;
+            if write_buffer.len() > 0 {
+                let mut new_filename: String = String::from("");
+                new_filename.push(ASCII_LOWER[prefix_first_char_idx]);
+                new_filename.push(ASCII_LOWER[prefix_second_char_idx]);
+                new_filename.insert_str(0, PREFIX);
+
+                fs::write(new_filename, write_buffer).unwrap();
+
+                if prefix_second_char_idx == ASCII_LOWER.len() {
+                    prefix_first_char_idx += 1;
+                }
+
+                prefix_second_char_idx += 1;
+            }
+            write_buffer.len()
+        };
+
+        if length == 0 {
+            break;
+        }
+
+        if counter == (chunk_count - 1) {
+            buf_reader.consume(last_chunk_size);
+        } else {
+            buf_reader.consume(length);
+        }
+    }
+    Ok(())
 }
 
 fn split_by_line_count(line_count: usize, file: File) -> Result<(), Box<dyn Error>> {
@@ -67,11 +114,15 @@ fn split_by_line_count(line_count: usize, file: File) -> Result<(), Box<dyn Erro
 
 pub fn run(args: Arguments) -> Result<(), Box<dyn Error>> {
     let file_path = args.file_path.clone();
+    let file = File::open(file_path).unwrap();
     let line_count = match args.line_count {
         Some(lc) => lc,
         None => DEFAULT_LINE_COUNT,
     };
-    let file = File::open(file_path).unwrap();
-    split_by_line_count(line_count, file)
 
+    if let Some(chunk_count) = args.chunk_count {
+        split_by_chunk_count(chunk_count, file)
+    } else {
+        split_by_line_count(line_count, file)
+    }
 }
