@@ -22,7 +22,45 @@ pub struct Arguments {
     line_count: Option<usize>,
     #[clap(short, long)]
     chunk_count: Option<usize>,
+    #[clap(short, long)]
+    byte_count: Option<String>,
     file_path: String,
+}
+
+fn split_by_byte_count(byte_count: String, file: File) -> Result<(), Box<dyn Error>> {
+    let byte_count = byte_count.parse::<usize>().unwrap();
+    let mut buf_reader = io::BufReader::with_capacity(byte_count, file);
+
+    let mut prefix_first_char_idx: usize = 0;
+    let mut prefix_second_char_idx: usize = 0;
+
+    loop {
+        let length = {
+            let write_buffer = buf_reader.fill_buf()?;
+            if write_buffer.len() > 0 {
+                let mut new_filename: String = String::from("");
+                new_filename.push(ASCII_LOWER[prefix_first_char_idx]);
+                new_filename.push(ASCII_LOWER[prefix_second_char_idx]);
+                new_filename.insert_str(0, PREFIX);
+
+                fs::write(new_filename, write_buffer).unwrap();
+
+                if prefix_second_char_idx == ASCII_LOWER.len() {
+                    prefix_first_char_idx += 1;
+                }
+
+                prefix_second_char_idx += 1;
+            }
+            write_buffer.len()
+        };
+
+        if length == 0 {
+            break;
+        }
+
+        buf_reader.consume(length);
+    }
+    Ok(())
 }
 
 fn split_by_chunk_count(chunk_count: usize, file: File) -> Result<(), Box<dyn Error>> {
@@ -122,6 +160,8 @@ pub fn run(args: Arguments) -> Result<(), Box<dyn Error>> {
 
     if let Some(chunk_count) = args.chunk_count {
         split_by_chunk_count(chunk_count, file)
+    } else if let Some(byte_count) = args.byte_count {
+        split_by_byte_count(byte_count, file)
     } else {
         split_by_line_count(line_count, file)
     }
