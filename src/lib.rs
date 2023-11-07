@@ -1,3 +1,4 @@
+use regex::Regex;
 use std::error::Error;
 use std::fs::{self, File};
 use std::io::{self, BufRead};
@@ -24,6 +25,8 @@ pub struct Arguments {
     chunk_count: Option<usize>,
     #[clap(short, long)]
     byte_count: Option<String>,
+    #[clap(short, long)]
+    pattern: Option<String>,
     file_path: String,
 }
 
@@ -59,6 +62,50 @@ fn split_by_byte_count(byte_count: String, file: File) -> Result<(), Box<dyn Err
         }
 
         buf_reader.consume(length);
+    }
+    Ok(())
+}
+
+fn split_by_pattern(pattern: String, file: File) -> Result<(), Box<dyn Error>> {
+    let lines = io::BufReader::new(file).lines();
+    let pattern_regex = Regex::new(pattern.as_str()).unwrap();
+    let mut write_buffer: Vec<String> = vec![];
+    let mut prefix_first_char_idx: usize = 0;
+    let mut prefix_second_char_idx: usize = 0;
+
+    for (_ , line) in lines.enumerate() {
+        if let Ok(l) = line {
+            let line_matches_pattern = pattern_regex.is_match(&l);
+
+            if line_matches_pattern && write_buffer.len() > 0 {
+                let mut new_filename: String = String::from("");
+                new_filename.push(ASCII_LOWER[prefix_first_char_idx]);
+                new_filename.push(ASCII_LOWER[prefix_second_char_idx]);
+                new_filename.insert_str(0, PREFIX);
+
+                let contents = write_buffer.join("\n");
+                fs::write(new_filename, contents).unwrap();
+
+                if prefix_second_char_idx == ASCII_LOWER.len() {
+                    prefix_first_char_idx += 1;
+                }
+
+                prefix_second_char_idx += 1;
+                write_buffer = vec![];
+            }
+
+            write_buffer.push(l);
+        }
+    }
+
+    if write_buffer.len() > 0 {
+        let mut new_filename: String = String::from("");
+        new_filename.push(ASCII_LOWER[prefix_first_char_idx]);
+        new_filename.push(ASCII_LOWER[prefix_second_char_idx]);
+        new_filename.insert_str(0, PREFIX);
+
+        let contents = write_buffer.join("\n");
+        fs::write(new_filename, contents).unwrap();
     }
     Ok(())
 }
@@ -134,7 +181,6 @@ fn split_by_line_count(line_count: usize, file: File) -> Result<(), Box<dyn Erro
                 prefix_second_char_idx += 1;
                 write_buffer = vec![];
             }
-
         }
     }
 
@@ -162,6 +208,8 @@ pub fn run(args: Arguments) -> Result<(), Box<dyn Error>> {
         split_by_chunk_count(chunk_count, file)
     } else if let Some(byte_count) = args.byte_count {
         split_by_byte_count(byte_count, file)
+    } else if let Some(pattern) = args.pattern {
+        split_by_pattern(pattern, file)
     } else {
         split_by_line_count(line_count, file)
     }
