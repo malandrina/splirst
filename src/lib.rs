@@ -19,13 +19,13 @@ static DEFAULT_LINE_COUNT: usize = 1000;
 
 #[derive(Parser,Default,Debug)]
 pub struct Arguments {
-    #[clap(short, long)]
+    #[clap(short, long, group="method")]
     line_count: Option<usize>,
-    #[clap(short='n', long)]
+    #[clap(short='n', long, group="method")]
     chunk_count: Option<usize>,
-    #[clap(short, long)]
+    #[clap(short, long, group="method")]
     byte_count: Option<String>,
-    #[clap(short, long)]
+    #[clap(short, long, group="method")]
     pattern: Option<String>,
     file_path: String,
 }
