@@ -21,7 +21,7 @@ static DEFAULT_LINE_COUNT: usize = 1000;
 pub struct Arguments {
     #[clap(short, long)]
     line_count: Option<usize>,
-    #[clap(short, long)]
+    #[clap(short='n', long)]
     chunk_count: Option<usize>,
     #[clap(short, long)]
     byte_count: Option<String>,
