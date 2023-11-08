@@ -22,7 +22,7 @@ static DEFAULT_LINE_COUNT: usize = 1000;
 struct CustomValueParser;
 
 impl clap::builder::TypedValueParser for CustomValueParser {
-    type Value = u32;
+    type Value = u64;
 
     fn parse_ref(
         &self,
@@ -30,15 +30,26 @@ impl clap::builder::TypedValueParser for CustomValueParser {
         _arg: Option<&clap::Arg>,
         value: &std::ffi::OsStr,
     ) -> Result<Self::Value, clap::Error> {
-        let unit_multipliers = HashMap::from([("k", 1000), ("m", 1000000)]);
+        let b_to_gb_multiplier = f32::powi(10u32 as f32, -9);
+        let unit_multipliers = HashMap::from([
+            ("k", 1000),
+            ("m", 1000000),
+            ("g", b_to_gb_multiplier as u64)
+        ]);
+
         let mut value = value.to_str().unwrap().split("").collect::<Vec<&str>>();
         value.retain(|i| i.len() > 0);
         let unit_index = value.len() - 1;
         let unit = value[unit_index];
+        let case_insensitive_unit = unit.to_lowercase();
+        let unit_key = &case_insensitive_unit[..];
+        let multiplier = unit_multipliers[unit_key];
+
         value.remove(unit_index);
-        let value = value.join("").parse::<u32>().unwrap();
-        let multiplier = unit_multipliers[unit];
-        Ok(value * multiplier)
+        let value = value.join("").parse::<u64>().unwrap();
+        let byte_count = value * multiplier;
+
+        Ok(byte_count)
     }
 }
 
@@ -49,13 +60,13 @@ pub struct Arguments {
     #[clap(short='n', long, group="method")]
     chunk_count: Option<usize>,
     #[clap(short, long, group="method", value_parser=CustomValueParser)]
-    byte_count: Option<u32>,
+    byte_count: Option<u64>,
     #[clap(short, long, group="method")]
     pattern: Option<String>,
     file_path: String,
 }
 
-fn split_by_byte_count(byte_count: u32, file: File) -> Result<(), Box<dyn Error>> {
+fn split_by_byte_count(byte_count: u64, file: File) -> Result<(), Box<dyn Error>> {
     let mut buf_reader = io::BufReader::with_capacity(byte_count as usize, file);
 
     let mut prefix_first_char_idx: usize = 0;
