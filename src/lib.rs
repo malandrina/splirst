@@ -15,8 +15,6 @@ static ASCII_LOWER: [char; 26] = [
     'z',
 ];
 
-static PREFIX: &str = "x";
-
 #[derive(Clone)]
 struct ByteCountValueParser;
 
@@ -63,9 +61,11 @@ pub struct Arguments {
     #[clap(short, long, group="method")]
     pattern: Option<String>,
     file_path: String,
+    #[clap(default_value="x")]
+    prefix: String,
 }
 
-fn split_by_byte_count(byte_count: u64, file: File) -> Result<(), Box<dyn Error>> {
+fn split_by_byte_count(byte_count: u64, file: File, prefix: String) -> Result<(), Box<dyn Error>> {
     let mut buf_reader = io::BufReader::with_capacity(byte_count as usize, file);
 
     let mut prefix_first_char_idx: usize = 0;
@@ -78,7 +78,7 @@ fn split_by_byte_count(byte_count: u64, file: File) -> Result<(), Box<dyn Error>
                 let mut new_filename: String = String::from("");
                 new_filename.push(ASCII_LOWER[prefix_first_char_idx]);
                 new_filename.push(ASCII_LOWER[prefix_second_char_idx]);
-                new_filename.insert_str(0, PREFIX);
+                new_filename.insert_str(0, &prefix[..]);
 
                 fs::write(new_filename, write_buffer).unwrap();
 
@@ -100,7 +100,7 @@ fn split_by_byte_count(byte_count: u64, file: File) -> Result<(), Box<dyn Error>
     Ok(())
 }
 
-fn split_by_pattern(pattern: String, file: File) -> Result<(), Box<dyn Error>> {
+fn split_by_pattern(pattern: String, file: File, prefix: String) -> Result<(), Box<dyn Error>> {
     let lines = io::BufReader::new(file).lines();
     let pattern_regex = Regex::new(pattern.as_str()).unwrap();
     let mut write_buffer: Vec<String> = vec![];
@@ -115,7 +115,7 @@ fn split_by_pattern(pattern: String, file: File) -> Result<(), Box<dyn Error>> {
                 let mut new_filename: String = String::from("");
                 new_filename.push(ASCII_LOWER[prefix_first_char_idx]);
                 new_filename.push(ASCII_LOWER[prefix_second_char_idx]);
-                new_filename.insert_str(0, PREFIX);
+                new_filename.insert_str(0, &prefix[..]);
 
                 let contents = write_buffer.join("\n");
                 fs::write(new_filename, contents).unwrap();
@@ -136,7 +136,7 @@ fn split_by_pattern(pattern: String, file: File) -> Result<(), Box<dyn Error>> {
         let mut new_filename: String = String::from("");
         new_filename.push(ASCII_LOWER[prefix_first_char_idx]);
         new_filename.push(ASCII_LOWER[prefix_second_char_idx]);
-        new_filename.insert_str(0, PREFIX);
+        new_filename.insert_str(0, &prefix[..]);
 
         let contents = write_buffer.join("\n");
         fs::write(new_filename, contents).unwrap();
@@ -144,7 +144,7 @@ fn split_by_pattern(pattern: String, file: File) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn split_by_chunk_count(chunk_count: usize, file: File) -> Result<(), Box<dyn Error>> {
+fn split_by_chunk_count(chunk_count: usize, file: File, prefix: String) -> Result<(), Box<dyn Error>> {
     let file_size = file.metadata().unwrap().len();
     let chunk_size = (file_size / chunk_count as u64) as usize;
     let first_n_chunks_size = chunk_size * (chunk_count - 1);
@@ -163,7 +163,7 @@ fn split_by_chunk_count(chunk_count: usize, file: File) -> Result<(), Box<dyn Er
                 let mut new_filename: String = String::from("");
                 new_filename.push(ASCII_LOWER[prefix_first_char_idx]);
                 new_filename.push(ASCII_LOWER[prefix_second_char_idx]);
-                new_filename.insert_str(0, PREFIX);
+                new_filename.insert_str(0, &prefix[..]);
 
                 fs::write(new_filename, write_buffer).unwrap();
 
@@ -189,7 +189,7 @@ fn split_by_chunk_count(chunk_count: usize, file: File) -> Result<(), Box<dyn Er
     Ok(())
 }
 
-fn split_by_line_count(line_count: usize, file: File) -> Result<(), Box<dyn Error>> {
+fn split_by_line_count(line_count: usize, file: File, prefix: String) -> Result<(), Box<dyn Error>> {
     let lines = io::BufReader::new(file).lines();
     let mut write_buffer: Vec<String> = vec![];
     let mut prefix_first_char_idx: usize = 0;
@@ -203,7 +203,7 @@ fn split_by_line_count(line_count: usize, file: File) -> Result<(), Box<dyn Erro
                 let mut new_filename: String = String::from("");
                 new_filename.push(ASCII_LOWER[prefix_first_char_idx]);
                 new_filename.push(ASCII_LOWER[prefix_second_char_idx]);
-                new_filename.insert_str(0, PREFIX);
+                new_filename.insert_str(0, &prefix[..]);
 
                 let contents = write_buffer.join("\n");
                 fs::write(new_filename, contents).unwrap();
@@ -222,7 +222,7 @@ fn split_by_line_count(line_count: usize, file: File) -> Result<(), Box<dyn Erro
         let mut new_filename: String = String::from("");
         new_filename.push(ASCII_LOWER[prefix_first_char_idx]);
         new_filename.push(ASCII_LOWER[prefix_second_char_idx]);
-        new_filename.insert_str(0, PREFIX);
+        new_filename.insert_str(0, &prefix[..]);
 
         let contents = write_buffer.join("\n");
         fs::write(new_filename, contents).unwrap();
@@ -233,14 +233,15 @@ fn split_by_line_count(line_count: usize, file: File) -> Result<(), Box<dyn Erro
 pub fn run(args: Arguments) -> Result<(), Box<dyn Error>> {
     let file_path = args.file_path.clone();
     let file = File::open(file_path).unwrap();
+    let prefix = args.prefix;
 
     if let Some(chunk_count) = args.chunk_count {
-        split_by_chunk_count(chunk_count, file)
+        split_by_chunk_count(chunk_count, file, prefix)
     } else if let Some(byte_count) = args.byte_count {
-        split_by_byte_count(byte_count, file)
+        split_by_byte_count(byte_count, file, prefix)
     } else if let Some(pattern) = args.pattern {
-        split_by_pattern(pattern, file)
+        split_by_pattern(pattern, file, prefix)
     } else {
-        split_by_line_count(args.line_count, file)
+        split_by_line_count(args.line_count, file, prefix)
     }
 }
