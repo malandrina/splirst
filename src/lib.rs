@@ -19,9 +19,9 @@ static PREFIX: &str = "x";
 static DEFAULT_LINE_COUNT: usize = 1000;
 
 #[derive(Clone)]
-struct CustomValueParser;
+struct ByteCountValueParser;
 
-impl clap::builder::TypedValueParser for CustomValueParser {
+impl clap::builder::TypedValueParser for ByteCountValueParser {
     type Value = u64;
 
     fn parse_ref(
@@ -59,7 +59,7 @@ pub struct Arguments {
     line_count: Option<usize>,
     #[clap(short='n', long, group="method")]
     chunk_count: Option<usize>,
-    #[clap(short, long, group="method", value_parser=CustomValueParser)]
+    #[clap(short, long, group="method", value_parser=ByteCountValueParser)]
     byte_count: Option<u64>,
     #[clap(short, long, group="method")]
     pattern: Option<String>,
