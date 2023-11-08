@@ -1,4 +1,5 @@
 use regex::Regex;
+use std::collections::HashMap;
 use std::error::Error;
 use std::fs::{self, File};
 use std::io::{self, BufRead};
@@ -29,22 +30,15 @@ impl clap::builder::TypedValueParser for CustomValueParser {
         _arg: Option<&clap::Arg>,
         value: &std::ffi::OsStr,
     ) -> Result<Self::Value, clap::Error> {
+        let unit_multipliers = HashMap::from([("k", 1000), ("m", 1000000)]);
         let mut value = value.to_str().unwrap().split("").collect::<Vec<&str>>();
         value.retain(|i| i.len() > 0);
         let unit_index = value.len() - 1;
         let unit = value[unit_index];
         value.remove(unit_index);
         let value = value.join("").parse::<u32>().unwrap();
-
-        if unit == "k" {
-            let v: u32 = value * 1000;
-            Ok(v)
-        } else if unit  == "m" {
-            let v: u32 = value * 1000000;
-            Ok(v)
-        } else {
-            panic!("Couldn't parse byte count")
-        }
+        let multiplier = unit_multipliers[unit];
+        Ok(value * multiplier)
     }
 }
 
