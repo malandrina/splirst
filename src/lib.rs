@@ -16,7 +16,6 @@ static ASCII_LOWER: [char; 26] = [
 ];
 
 static PREFIX: &str = "x";
-static DEFAULT_LINE_COUNT: usize = 1000;
 
 #[derive(Clone)]
 struct ByteCountValueParser;
@@ -55,8 +54,8 @@ impl clap::builder::TypedValueParser for ByteCountValueParser {
 
 #[derive(Parser,Default,Debug)]
 pub struct Arguments {
-    #[clap(short, long, group="method")]
-    line_count: Option<usize>,
+    #[clap(short, long, default_value="1000", group="method")]
+    line_count: usize,
     #[clap(short='n', long, group="method")]
     chunk_count: Option<usize>,
     #[clap(short, long, group="method", value_parser=ByteCountValueParser)]
@@ -234,10 +233,6 @@ fn split_by_line_count(line_count: usize, file: File) -> Result<(), Box<dyn Erro
 pub fn run(args: Arguments) -> Result<(), Box<dyn Error>> {
     let file_path = args.file_path.clone();
     let file = File::open(file_path).unwrap();
-    let line_count = match args.line_count {
-        Some(lc) => lc,
-        None => DEFAULT_LINE_COUNT,
-    };
 
     if let Some(chunk_count) = args.chunk_count {
         split_by_chunk_count(chunk_count, file)
@@ -246,6 +241,6 @@ pub fn run(args: Arguments) -> Result<(), Box<dyn Error>> {
     } else if let Some(pattern) = args.pattern {
         split_by_pattern(pattern, file)
     } else {
-        split_by_line_count(line_count, file)
+        split_by_line_count(args.line_count, file)
     }
 }
