@@ -17,22 +17,52 @@ static ASCII_LOWER: [char; 26] = [
 static PREFIX: &str = "x";
 static DEFAULT_LINE_COUNT: usize = 1000;
 
+#[derive(Clone)]
+struct CustomValueParser;
+
+impl clap::builder::TypedValueParser for CustomValueParser {
+    type Value = u32;
+
+    fn parse_ref(
+        &self,
+        _cmd: &clap::Command,
+        _arg: Option<&clap::Arg>,
+        value: &std::ffi::OsStr,
+    ) -> Result<Self::Value, clap::Error> {
+        let mut value = value.to_str().unwrap().split("").collect::<Vec<&str>>();
+        value.retain(|i| i.len() > 0);
+        let unit_index = value.len() - 1;
+        let unit = value[unit_index];
+        value.remove(unit_index);
+        let value = value.join("").parse::<u32>().unwrap();
+
+        if unit == "k" {
+            let v: u32 = value * 1000;
+            Ok(v)
+        } else if unit  == "m" {
+            let v: u32 = value * 1000000;
+            Ok(v)
+        } else {
+            panic!("Couldn't parse byte count")
+        }
+    }
+}
+
 #[derive(Parser,Default,Debug)]
 pub struct Arguments {
     #[clap(short, long, group="method")]
     line_count: Option<usize>,
     #[clap(short='n', long, group="method")]
     chunk_count: Option<usize>,
-    #[clap(short, long, group="method")]
-    byte_count: Option<String>,
+    #[clap(short, long, group="method", value_parser=CustomValueParser)]
+    byte_count: Option<u32>,
     #[clap(short, long, group="method")]
     pattern: Option<String>,
     file_path: String,
 }
 
-fn split_by_byte_count(byte_count: String, file: File) -> Result<(), Box<dyn Error>> {
-    let byte_count = byte_count.parse::<usize>().unwrap();
-    let mut buf_reader = io::BufReader::with_capacity(byte_count, file);
+fn split_by_byte_count(byte_count: u32, file: File) -> Result<(), Box<dyn Error>> {
+    let mut buf_reader = io::BufReader::with_capacity(byte_count as usize, file);
 
     let mut prefix_first_char_idx: usize = 0;
     let mut prefix_second_char_idx: usize = 0;
