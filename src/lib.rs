@@ -65,6 +65,22 @@ pub struct Arguments {
     prefix: String,
 }
 
+fn alphabetic_suffix(file_number: usize) -> String {
+    let mut suffix: String = String::from("");
+    let first_char_idx = if file_number % ASCII_LOWER.len() == 0 {
+        ((file_number / ASCII_LOWER.len())) - 1 as usize
+    } else {
+        ((file_number / ASCII_LOWER.len()) as f32).floor() as usize
+    };
+
+    let second_char_idx = (file_number - (first_char_idx * ASCII_LOWER.len())) - 1;
+    let first_char = ASCII_LOWER[first_char_idx];
+    let second_char = ASCII_LOWER[second_char_idx];
+    suffix.push(first_char);
+    suffix.push(second_char);
+    suffix
+}
+
 fn split_by_byte_count(byte_count: u64, file: File, prefix: String) -> Result<(), Box<dyn Error>> {
     let mut buf_reader = io::BufReader::with_capacity(byte_count as usize, file);
 
@@ -152,8 +168,6 @@ fn split_by_chunk_count(chunk_count: usize, file: File, prefix: String) -> Resul
     let mut buf_reader = io::BufReader::with_capacity(last_chunk_size, file);
 
     let mut counter = 0;
-    let mut suffix_first_char_idx: usize = 0;
-    let mut suffix_second_char_idx: usize = 0;
 
     loop {
         let length = {
@@ -161,17 +175,11 @@ fn split_by_chunk_count(chunk_count: usize, file: File, prefix: String) -> Resul
             counter += 1;
             if write_buffer.len() > 0 {
                 let mut new_filename: String = String::from("");
-                new_filename.push(ASCII_LOWER[suffix_first_char_idx]);
-                new_filename.push(ASCII_LOWER[suffix_second_char_idx]);
+                let suffix = alphabetic_suffix(counter);
+                new_filename.insert_str(0, &suffix[..]);
                 new_filename.insert_str(0, &prefix[..]);
 
                 fs::write(new_filename, write_buffer).unwrap();
-
-                if suffix_second_char_idx == ASCII_LOWER.len() {
-                    suffix_first_char_idx += 1;
-                }
-
-                suffix_second_char_idx += 1;
             }
             write_buffer.len()
         };
