@@ -6,6 +6,8 @@ use std::io::{self, BufRead};
 
 use clap::Parser;
 
+static DEFAULT_SUFFIX_LENGTH: usize = 2;
+
 static ASCII_LOWER: [char; 26] = [
     'a', 'b', 'c', 'd', 'e',
     'f', 'g', 'h', 'i', 'j',
@@ -52,6 +54,8 @@ impl clap::builder::TypedValueParser for ByteCountValueParser {
 
 #[derive(Parser,Default,Debug)]
 pub struct Arguments {
+    #[clap(short='a', long, default_value="2")]
+    suffix_length: usize,
     #[clap(short, long, default_value="1000", group="method")]
     line_count: usize,
     #[clap(short='n', long, group="method")]
@@ -65,7 +69,7 @@ pub struct Arguments {
     prefix: String,
 }
 
-fn alphabetic_suffix(file_number: usize) -> String {
+fn alphabetic_suffix(file_number: usize, suffix_length: usize) -> String {
     let mut suffix: String = String::from("");
     let first_char_idx = if file_number % ASCII_LOWER.len() == 0 {
         ((file_number / ASCII_LOWER.len())) - 1 as usize
@@ -76,12 +80,17 @@ fn alphabetic_suffix(file_number: usize) -> String {
     let second_char_idx = (file_number - (first_char_idx * ASCII_LOWER.len())) - 1;
     let first_char = ASCII_LOWER[first_char_idx];
     let second_char = ASCII_LOWER[second_char_idx];
+
+    for _ in 0..(suffix_length - DEFAULT_SUFFIX_LENGTH) {
+        suffix.push('a')
+    }
+
     suffix.push(first_char);
     suffix.push(second_char);
     suffix
 }
 
-fn split_by_byte_count(byte_count: u64, file: File, prefix: String) -> Result<(), Box<dyn Error>> {
+fn split_by_byte_count(byte_count: u64, file: File, prefix: String, suffix_length: usize) -> Result<(), Box<dyn Error>> {
     let mut buf_reader = io::BufReader::with_capacity(byte_count as usize, file);
     let mut counter = 0;
 
@@ -91,7 +100,7 @@ fn split_by_byte_count(byte_count: u64, file: File, prefix: String) -> Result<()
             if write_buffer.len() > 0 {
                 counter += 1;
                 let mut new_filename: String = String::from("");
-                let suffix = alphabetic_suffix(counter);
+                let suffix = alphabetic_suffix(counter, suffix_length);
                 new_filename.insert_str(0, &suffix[..]);
                 new_filename.insert_str(0, &prefix[..]);
 
@@ -109,7 +118,7 @@ fn split_by_byte_count(byte_count: u64, file: File, prefix: String) -> Result<()
     Ok(())
 }
 
-fn split_by_pattern(pattern: String, file: File, prefix: String) -> Result<(), Box<dyn Error>> {
+fn split_by_pattern(pattern: String, file: File, prefix: String, suffix_length: usize) -> Result<(), Box<dyn Error>> {
     let lines = io::BufReader::new(file).lines();
     let pattern_regex = Regex::new(pattern.as_str()).unwrap();
     let mut write_buffer: Vec<String> = vec![];
@@ -122,7 +131,7 @@ fn split_by_pattern(pattern: String, file: File, prefix: String) -> Result<(), B
             if line_matches_pattern && write_buffer.len() > 0 {
                 counter += 1;
                 let mut new_filename: String = String::from("");
-                let suffix = alphabetic_suffix(counter);
+                let suffix = alphabetic_suffix(counter, suffix_length);
                 new_filename.insert_str(0, &suffix[..]);
                 new_filename.insert_str(0, &prefix[..]);
 
@@ -138,7 +147,7 @@ fn split_by_pattern(pattern: String, file: File, prefix: String) -> Result<(), B
     if write_buffer.len() > 0 {
         counter += 1;
         let mut new_filename: String = String::from("");
-        let suffix = alphabetic_suffix(counter);
+        let suffix = alphabetic_suffix(counter, suffix_length);
         new_filename.insert_str(0, &suffix[..]);
         new_filename.insert_str(0, &prefix[..]);
 
@@ -148,7 +157,7 @@ fn split_by_pattern(pattern: String, file: File, prefix: String) -> Result<(), B
     Ok(())
 }
 
-fn split_by_chunk_count(chunk_count: usize, file: File, prefix: String) -> Result<(), Box<dyn Error>> {
+fn split_by_chunk_count(chunk_count: usize, file: File, prefix: String, suffix_length: usize) -> Result<(), Box<dyn Error>> {
     let file_size = file.metadata().unwrap().len();
     let chunk_size = (file_size / chunk_count as u64) as usize;
     let first_n_chunks_size = chunk_size * (chunk_count - 1);
@@ -163,7 +172,7 @@ fn split_by_chunk_count(chunk_count: usize, file: File, prefix: String) -> Resul
             counter += 1;
             if write_buffer.len() > 0 {
                 let mut new_filename: String = String::from("");
-                let suffix = alphabetic_suffix(counter);
+                let suffix = alphabetic_suffix(counter, suffix_length);
                 new_filename.insert_str(0, &suffix[..]);
                 new_filename.insert_str(0, &prefix[..]);
 
@@ -185,7 +194,7 @@ fn split_by_chunk_count(chunk_count: usize, file: File, prefix: String) -> Resul
     Ok(())
 }
 
-fn split_by_line_count(line_count: usize, file: File, prefix: String) -> Result<(), Box<dyn Error>> {
+fn split_by_line_count(line_count: usize, file: File, prefix: String, suffix_length: usize) -> Result<(), Box<dyn Error>> {
     let lines = io::BufReader::new(file).lines();
     let mut write_buffer: Vec<String> = vec![];
     let mut counter = 0;
@@ -197,7 +206,7 @@ fn split_by_line_count(line_count: usize, file: File, prefix: String) -> Result<
             if i > 0 && i % line_count == 0 {
                 counter += 1;
                 let mut new_filename: String = String::from("");
-                let suffix = alphabetic_suffix(counter);
+                let suffix = alphabetic_suffix(counter, suffix_length);
                 new_filename.insert_str(0, &suffix[..]);
                 new_filename.insert_str(0, &prefix[..]);
 
@@ -211,7 +220,7 @@ fn split_by_line_count(line_count: usize, file: File, prefix: String) -> Result<
     if write_buffer.len() > 0 {
         counter += 1;
         let mut new_filename: String = String::from("");
-        let suffix = alphabetic_suffix(counter);
+        let suffix = alphabetic_suffix(counter, suffix_length);
         new_filename.insert_str(0, &suffix[..]);
         new_filename.insert_str(0, &prefix[..]);
 
@@ -224,15 +233,16 @@ fn split_by_line_count(line_count: usize, file: File, prefix: String) -> Result<
 pub fn run(args: Arguments) -> Result<(), Box<dyn Error>> {
     let file_path = args.file_path.clone();
     let file = File::open(file_path).unwrap();
+    let suffix_length = args.suffix_length;
     let prefix = args.prefix;
 
     if let Some(chunk_count) = args.chunk_count {
-        split_by_chunk_count(chunk_count, file, prefix)
+        split_by_chunk_count(chunk_count, file, prefix, suffix_length)
     } else if let Some(byte_count) = args.byte_count {
-        split_by_byte_count(byte_count, file, prefix)
+        split_by_byte_count(byte_count, file, prefix, suffix_length)
     } else if let Some(pattern) = args.pattern {
-        split_by_pattern(pattern, file, prefix)
+        split_by_pattern(pattern, file, prefix, suffix_length)
     } else {
-        split_by_line_count(args.line_count, file, prefix)
+        split_by_line_count(args.line_count, file, prefix, suffix_length)
     }
 }
