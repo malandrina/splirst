@@ -17,6 +17,12 @@ static ASCII_LOWER: [char; 26] = [
     'z',
 ];
 
+struct FileNameOptions {
+    prefix: String,
+    suffix_length: usize,
+    numeric_suffix: bool,
+}
+
 #[derive(Clone)]
 struct ByteCountValueParser;
 
@@ -103,7 +109,10 @@ fn suffix(file_number: usize, suffix_length: usize, numeric_suffix: bool) -> Str
     suffix
 }
 
-fn split_by_byte_count(byte_count: u64, file: File, prefix: String, suffix_length: usize, numeric_suffix: bool) -> Result<(), Box<dyn Error>> {
+fn split_by_byte_count(byte_count: u64, file: File, file_name_options: FileNameOptions) -> Result<(), Box<dyn Error>> {
+    let suffix_length = file_name_options.suffix_length;
+    let numeric_suffix = file_name_options.numeric_suffix;
+    let prefix = file_name_options.prefix;
     let mut buf_reader = io::BufReader::with_capacity(byte_count as usize, file);
     let mut counter = 0;
 
@@ -131,7 +140,10 @@ fn split_by_byte_count(byte_count: u64, file: File, prefix: String, suffix_lengt
     Ok(())
 }
 
-fn split_by_pattern(pattern: String, file: File, prefix: String, suffix_length: usize, numeric_suffix: bool) -> Result<(), Box<dyn Error>> {
+fn split_by_pattern(pattern: String, file: File, file_name_options: FileNameOptions) -> Result<(), Box<dyn Error>> {
+    let numeric_suffix = file_name_options.numeric_suffix;
+    let suffix_length = file_name_options.suffix_length;
+    let prefix = file_name_options.prefix;
     let lines = io::BufReader::new(file).lines();
     let pattern_regex = Regex::new(pattern.as_str()).unwrap();
     let mut write_buffer: Vec<String> = vec![];
@@ -170,7 +182,10 @@ fn split_by_pattern(pattern: String, file: File, prefix: String, suffix_length: 
     Ok(())
 }
 
-fn split_by_chunk_count(chunk_count: usize, file: File, prefix: String, suffix_length: usize, numeric_suffix: bool) -> Result<(), Box<dyn Error>> {
+fn split_by_chunk_count(chunk_count: usize, file: File, file_name_options: FileNameOptions) -> Result<(), Box<dyn Error>> {
+    let suffix_length = file_name_options.suffix_length;
+    let numeric_suffix = file_name_options.numeric_suffix;
+    let prefix = file_name_options.prefix;
     let file_size = file.metadata().unwrap().len();
     let chunk_size = (file_size / chunk_count as u64) as usize;
     let first_n_chunks_size = chunk_size * (chunk_count - 1);
@@ -207,7 +222,10 @@ fn split_by_chunk_count(chunk_count: usize, file: File, prefix: String, suffix_l
     Ok(())
 }
 
-fn split_by_line_count(line_count: usize, file: File, prefix: String, suffix_length: usize, numeric_suffix: bool) -> Result<(), Box<dyn Error>> {
+fn split_by_line_count(line_count: usize, file: File, file_name_options: FileNameOptions) -> Result<(), Box<dyn Error>> {
+    let suffix_length = file_name_options.suffix_length;
+    let numeric_suffix = file_name_options.numeric_suffix;
+    let prefix = file_name_options.prefix;
     let lines = io::BufReader::new(file).lines();
     let mut write_buffer: Vec<String> = vec![];
     let mut counter = 0;
@@ -249,14 +267,15 @@ pub fn run(args: Arguments) -> Result<(), Box<dyn Error>> {
     let suffix_length = args.suffix_length;
     let numeric_suffix = args.numeric_suffix;
     let prefix = args.prefix;
+    let file_name_options = FileNameOptions { prefix, suffix_length, numeric_suffix };
 
     if let Some(chunk_count) = args.chunk_count {
-        split_by_chunk_count(chunk_count, file, prefix, suffix_length, numeric_suffix)
+        split_by_chunk_count(chunk_count, file, file_name_options)
     } else if let Some(byte_count) = args.byte_count {
-        split_by_byte_count(byte_count, file, prefix, suffix_length, numeric_suffix)
+        split_by_byte_count(byte_count, file, file_name_options)
     } else if let Some(pattern) = args.pattern {
-        split_by_pattern(pattern, file, prefix, suffix_length, numeric_suffix)
+        split_by_pattern(pattern, file, file_name_options)
     } else {
-        split_by_line_count(args.line_count, file, prefix, suffix_length, numeric_suffix)
+        split_by_line_count(args.line_count, file, file_name_options)
     }
 }
