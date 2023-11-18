@@ -17,6 +17,42 @@ static ASCII_LOWER: [char; 26] = [
     'z',
 ];
 
+struct FileSuffix;
+
+impl FileSuffix {
+    pub fn build(file_number: usize, suffix_length: usize, numeric_suffix: bool) -> String {
+        let mut suffix: String = String::from("");
+
+        if numeric_suffix {
+            let n = &(file_number - 1).to_string()[..];
+            suffix.insert_str(0, n);
+            for _ in 0..(suffix_length - n.len()) {
+                suffix.insert_str(0, "0");
+            }
+
+        } else {
+          let first_char_idx = if file_number % ASCII_LOWER.len() == 0 {
+              ((file_number / ASCII_LOWER.len())) - 1 as usize
+          } else {
+              ((file_number / ASCII_LOWER.len()) as f32).floor() as usize
+          };
+
+          let second_char_idx = (file_number - (first_char_idx * ASCII_LOWER.len())) - 1;
+          let first_char = ASCII_LOWER[first_char_idx];
+          let second_char = ASCII_LOWER[second_char_idx];
+
+          for _ in 0..(suffix_length - DEFAULT_SUFFIX_LENGTH) {
+              suffix.push('a')
+          }
+
+          suffix.push(first_char);
+          suffix.push(second_char);
+        }
+
+        suffix
+    }
+}
+
 struct FileOptions {
     file: File,
     prefix: String,
@@ -78,38 +114,6 @@ pub struct Arguments {
     prefix: String,
 }
 
-fn suffix(file_number: usize, suffix_length: usize, numeric_suffix: bool) -> String {
-    let mut suffix: String = String::from("");
-
-    if numeric_suffix {
-        let n = &(file_number - 1).to_string()[..];
-        suffix.insert_str(0, n);
-        for _ in 0..(suffix_length - n.len()) {
-            suffix.insert_str(0, "0");
-        }
-
-    } else {
-      let first_char_idx = if file_number % ASCII_LOWER.len() == 0 {
-          ((file_number / ASCII_LOWER.len())) - 1 as usize
-      } else {
-          ((file_number / ASCII_LOWER.len()) as f32).floor() as usize
-      };
-
-      let second_char_idx = (file_number - (first_char_idx * ASCII_LOWER.len())) - 1;
-      let first_char = ASCII_LOWER[first_char_idx];
-      let second_char = ASCII_LOWER[second_char_idx];
-
-      for _ in 0..(suffix_length - DEFAULT_SUFFIX_LENGTH) {
-          suffix.push('a')
-      }
-
-      suffix.push(first_char);
-      suffix.push(second_char);
-    }
-
-    suffix
-}
-
 fn split_by_byte_count(byte_count: u64, file_options: FileOptions) -> Result<(), Box<dyn Error>> {
     let suffix_length = file_options.suffix_length;
     let numeric_suffix = file_options.numeric_suffix;
@@ -124,7 +128,7 @@ fn split_by_byte_count(byte_count: u64, file_options: FileOptions) -> Result<(),
             if write_buffer.len() > 0 {
                 counter += 1;
                 let mut new_filename: String = String::from("");
-                let suffix = suffix(counter, suffix_length, numeric_suffix);
+                let suffix = FileSuffix::build(counter, suffix_length, numeric_suffix);
                 new_filename.insert_str(0, &suffix[..]);
                 new_filename.insert_str(0, &prefix[..]);
 
@@ -159,7 +163,7 @@ fn split_by_pattern(pattern: String, file_options: FileOptions) -> Result<(), Bo
             if line_matches_pattern && write_buffer.len() > 0 {
                 counter += 1;
                 let mut new_filename: String = String::from("");
-                let suffix = suffix(counter, suffix_length, numeric_suffix);
+                let suffix = FileSuffix::build(counter, suffix_length, numeric_suffix);
                 new_filename.insert_str(0, &suffix[..]);
                 new_filename.insert_str(0, &prefix[..]);
 
@@ -175,7 +179,7 @@ fn split_by_pattern(pattern: String, file_options: FileOptions) -> Result<(), Bo
     if write_buffer.len() > 0 {
         counter += 1;
         let mut new_filename: String = String::from("");
-        let suffix = suffix(counter, suffix_length, numeric_suffix);
+        let suffix = FileSuffix::build(counter, suffix_length, numeric_suffix);
         new_filename.insert_str(0, &suffix[..]);
         new_filename.insert_str(0, &prefix[..]);
 
@@ -204,7 +208,7 @@ fn split_by_chunk_count(chunk_count: usize, file_options: FileOptions) -> Result
             counter += 1;
             if write_buffer.len() > 0 {
                 let mut new_filename: String = String::from("");
-                let suffix = suffix(counter, suffix_length, numeric_suffix);
+                let suffix = FileSuffix::build(counter, suffix_length, numeric_suffix);
                 new_filename.insert_str(0, &suffix[..]);
                 new_filename.insert_str(0, &prefix[..]);
 
@@ -242,7 +246,7 @@ fn split_by_line_count(line_count: usize, file_options: FileOptions) -> Result<(
             if i > 0 && i % line_count == 0 {
                 counter += 1;
                 let mut new_filename: String = String::from("");
-                let suffix = suffix(counter, suffix_length, numeric_suffix);
+                let suffix = FileSuffix::build(counter, suffix_length, numeric_suffix);
                 new_filename.insert_str(0, &suffix[..]);
                 new_filename.insert_str(0, &prefix[..]);
 
@@ -256,7 +260,7 @@ fn split_by_line_count(line_count: usize, file_options: FileOptions) -> Result<(
     if write_buffer.len() > 0 {
         counter += 1;
         let mut new_filename: String = String::from("");
-        let suffix = suffix(counter, suffix_length, numeric_suffix);
+        let suffix = FileSuffix::build(counter, suffix_length, numeric_suffix);
         new_filename.insert_str(0, &suffix[..]);
         new_filename.insert_str(0, &prefix[..]);
 
