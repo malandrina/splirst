@@ -115,10 +115,7 @@ pub struct Arguments {
 }
 
 fn split_by_byte_count(byte_count: u64, file_options: FileOptions) -> Result<(), Box<dyn Error>> {
-    let suffix_length = file_options.suffix_length;
-    let numeric_suffix = file_options.numeric_suffix;
-    let prefix = file_options.prefix;
-    let file = file_options.file;
+    let FileOptions { numeric_suffix, suffix_length, prefix, file } = file_options;
     let mut buf_reader = io::BufReader::with_capacity(byte_count as usize, file);
     let mut counter = 0;
 
@@ -147,10 +144,7 @@ fn split_by_byte_count(byte_count: u64, file_options: FileOptions) -> Result<(),
 }
 
 fn split_by_pattern(pattern: String, file_options: FileOptions) -> Result<(), Box<dyn Error>> {
-    let numeric_suffix = file_options.numeric_suffix;
-    let suffix_length = file_options.suffix_length;
-    let prefix = file_options.prefix;
-    let file = file_options.file;
+    let FileOptions { numeric_suffix, suffix_length, prefix, file } = file_options;
     let lines = io::BufReader::new(file).lines();
     let pattern_regex = Regex::new(pattern.as_str()).unwrap();
     let mut write_buffer: Vec<String> = vec![];
@@ -184,16 +178,14 @@ fn split_by_pattern(pattern: String, file_options: FileOptions) -> Result<(), Bo
         new_filename.insert_str(0, &prefix[..]);
 
         let contents = write_buffer.join("\n");
-        fs::write(new_filename, contents).unwrap();
+        let mut new_file = File::create(new_filename).unwrap();
+        new_file.write_all(contents.as_bytes()).unwrap();
     }
     Ok(())
 }
 
 fn split_by_chunk_count(chunk_count: usize, file_options: FileOptions) -> Result<(), Box<dyn Error>> {
-    let suffix_length = file_options.suffix_length;
-    let numeric_suffix = file_options.numeric_suffix;
-    let prefix = file_options.prefix;
-    let file = file_options.file;
+    let FileOptions { numeric_suffix, suffix_length, prefix, file } = file_options;
     let file_size = file.metadata().unwrap().len();
     let chunk_size = (file_size / chunk_count as u64) as usize;
     let first_n_chunks_size = chunk_size * (chunk_count - 1);
@@ -231,10 +223,7 @@ fn split_by_chunk_count(chunk_count: usize, file_options: FileOptions) -> Result
 }
 
 fn split_by_line_count(line_count: usize, file_options: FileOptions) -> Result<(), Box<dyn Error>> {
-    let suffix_length = file_options.suffix_length;
-    let numeric_suffix = file_options.numeric_suffix;
-    let prefix = file_options.prefix;
-    let file = file_options.file;
+    let FileOptions { numeric_suffix, suffix_length, prefix, file } = file_options;
     let lines = io::BufReader::new(file).lines();
     let mut write_buffer: Vec<String> = vec![];
     let mut counter = 0;
@@ -273,9 +262,7 @@ fn split_by_line_count(line_count: usize, file_options: FileOptions) -> Result<(
 pub fn run(args: Arguments) -> Result<(), Box<dyn Error>> {
     let file_path = args.file_path.clone();
     let file = File::open(file_path).unwrap();
-    let suffix_length = args.suffix_length;
-    let numeric_suffix = args.numeric_suffix;
-    let prefix = args.prefix;
+    let Arguments { numeric_suffix, suffix_length, prefix, .. } = args;
     let file_options = FileOptions { file, prefix, suffix_length, numeric_suffix };
 
     if let Some(chunk_count) = args.chunk_count {
