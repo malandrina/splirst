@@ -106,8 +106,8 @@ pub struct Arguments {
     numeric_suffix: bool,
     #[clap(short, long, default_value="1000", group="method")]
     line_count: usize,
-    #[clap(short='n', long, group="method")]
-    chunk_count: Option<usize>,
+    #[clap(short='n', long, group="method", value_parser=0..=676)]
+    chunk_count: Option<i64>,
     #[clap(short, long, group="method", value_parser=ByteCountValueParser)]
     byte_count: Option<u64>,
     #[clap(short, long, group="method")]
@@ -250,7 +250,7 @@ pub fn run(args: Arguments) -> Result<(), Box<dyn Error>> {
     let file_options = FileOptions { file, prefix, suffix_length, numeric_suffix };
 
     if let Some(chunk_count) = args.chunk_count {
-        split_by_chunk_count(chunk_count, file_options)
+        split_by_chunk_count(chunk_count as usize, file_options)
     } else if let Some(byte_count) = args.byte_count {
         split_by_byte_count(byte_count, file_options)
     } else if let Some(pattern) = args.pattern {
