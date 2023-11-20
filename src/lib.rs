@@ -100,8 +100,8 @@ impl clap::builder::TypedValueParser for ByteCountValueParser {
 
 #[derive(Parser,Default,Debug)]
 pub struct Arguments {
-    #[clap(short='a', long, default_value="2")]
-    suffix_length: usize,
+    #[clap(short='a', long, default_value="2", value_parser=2..=13)]
+    suffix_length: i64,
     #[clap(short='d', long)]
     numeric_suffix: bool,
     #[clap(short, long, default_value="1000", group="method")]
@@ -247,10 +247,12 @@ pub fn run(args: Arguments) -> Result<(), Box<dyn Error>> {
     let file_path = args.file_path.clone();
     let file = File::open(file_path).unwrap();
     let Arguments { numeric_suffix, suffix_length, prefix, .. } = args;
+    let suffix_length = suffix_length as usize;
     let file_options = FileOptions { file, prefix, suffix_length, numeric_suffix };
 
     if let Some(chunk_count) = args.chunk_count {
-        split_by_chunk_count(chunk_count as usize, file_options)
+        let chunk_count = chunk_count as usize;
+        split_by_chunk_count(chunk_count, file_options)
     } else if let Some(byte_count) = args.byte_count {
         split_by_byte_count(byte_count, file_options)
     } else if let Some(pattern) = args.pattern {
