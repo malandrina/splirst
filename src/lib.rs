@@ -75,11 +75,11 @@ impl clap::builder::TypedValueParser for ByteCountValueParser {
         _arg: Option<&clap::Arg>,
         value: &std::ffi::OsStr,
     ) -> Result<Self::Value, clap::Error> {
-        let b_to_gb_multiplier = f32::powi(10u32 as f32, -9);
+        let b_to_gb_multiplier = (1.0/f32::powi(10u32 as f32, -9)) as u64;
         let unit_multipliers = HashMap::from([
             ("k", 1000),
             ("m", 1000000),
-            ("g", b_to_gb_multiplier as u64)
+            ("g", b_to_gb_multiplier)
         ]);
 
         let mut value = value.to_str().unwrap().split("").collect::<Vec<&str>>();
