@@ -6,8 +6,6 @@ use std::io::{self, BufRead, Write};
 
 use clap::Parser;
 
-static DEFAULT_SUFFIX_LENGTH: usize = 2;
-
 static ASCII_LOWER: [char; 26] = [
     'a', 'b', 'c', 'd', 'e',
     'f', 'g', 'h', 'i', 'j',
@@ -16,6 +14,8 @@ static ASCII_LOWER: [char; 26] = [
     'u', 'v', 'w', 'x', 'y',
     'z',
 ];
+static DEFAULT_SUFFIX_FIRST_CHAR: char = 'a';
+static DEFAULT_SUFFIX_LENGTH: usize = 2;
 
 struct Filename;
 
@@ -43,7 +43,7 @@ impl Filename {
           let second_char = ASCII_LOWER[second_char_idx];
 
           for _ in 0..(suffix_length - DEFAULT_SUFFIX_LENGTH) {
-              suffix.push('a')
+              suffix.push(DEFAULT_SUFFIX_FIRST_CHAR)
           }
 
           suffix.push(first_char);
