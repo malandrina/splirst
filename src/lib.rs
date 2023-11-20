@@ -1,8 +1,8 @@
 use regex::Regex;
 use std::collections::HashMap;
 use std::error::Error;
-use std::fs::{self, File};
-use std::io::{self, BufRead};
+use std::fs::{File};
+use std::io::{self, BufRead, Write};
 
 use clap::Parser;
 
@@ -17,10 +17,11 @@ static ASCII_LOWER: [char; 26] = [
     'z',
 ];
 
-struct FileSuffix;
+struct Filename;
 
-impl FileSuffix {
-    pub fn build(file_number: usize, suffix_length: usize, numeric_suffix: bool) -> String {
+impl Filename {
+    pub fn build(file_number: usize, suffix_length: usize, numeric_suffix: bool, prefix: String) -> String {
+        let mut filename: String = String::from("");
         let mut suffix: String = String::from("");
 
         if numeric_suffix {
@@ -49,7 +50,9 @@ impl FileSuffix {
           suffix.push(second_char);
         }
 
-        suffix
+        filename.insert_str(0, &suffix[..]);
+        filename.insert_str(0, &prefix[..]);
+        filename
     }
 }
 
@@ -124,12 +127,9 @@ fn split_by_byte_count(byte_count: u64, file_options: FileOptions) -> Result<(),
             let write_buffer = buf_reader.fill_buf()?;
             if write_buffer.len() > 0 {
                 counter += 1;
-                let mut new_filename: String = String::from("");
-                let suffix = FileSuffix::build(counter, suffix_length, numeric_suffix);
-                new_filename.insert_str(0, &suffix[..]);
-                new_filename.insert_str(0, &prefix[..]);
-
-                fs::write(new_filename, write_buffer).unwrap();
+                let new_filename = Filename::build(counter, suffix_length, numeric_suffix, prefix.clone());
+                let mut new_file = File::create(new_filename).unwrap();
+                new_file.write_all(write_buffer).unwrap();
             }
             write_buffer.len()
         };
@@ -156,13 +156,10 @@ fn split_by_pattern(pattern: String, file_options: FileOptions) -> Result<(), Bo
 
             if line_matches_pattern && write_buffer.len() > 0 {
                 counter += 1;
-                let mut new_filename: String = String::from("");
-                let suffix = FileSuffix::build(counter, suffix_length, numeric_suffix);
-                new_filename.insert_str(0, &suffix[..]);
-                new_filename.insert_str(0, &prefix[..]);
-
+                let new_filename = Filename::build(counter, suffix_length, numeric_suffix, prefix.clone());
                 let contents = write_buffer.join("\n");
-                fs::write(new_filename, contents).unwrap();
+                let mut new_file = File::create(new_filename).unwrap();
+                new_file.write_all(contents.as_bytes()).unwrap();
                 write_buffer = vec![];
             }
 
@@ -172,11 +169,7 @@ fn split_by_pattern(pattern: String, file_options: FileOptions) -> Result<(), Bo
 
     if write_buffer.len() > 0 {
         counter += 1;
-        let mut new_filename: String = String::from("");
-        let suffix = FileSuffix::build(counter, suffix_length, numeric_suffix);
-        new_filename.insert_str(0, &suffix[..]);
-        new_filename.insert_str(0, &prefix[..]);
-
+        let new_filename = Filename::build(counter, suffix_length, numeric_suffix, prefix);
         let contents = write_buffer.join("\n");
         let mut new_file = File::create(new_filename).unwrap();
         new_file.write_all(contents.as_bytes()).unwrap();
@@ -199,12 +192,9 @@ fn split_by_chunk_count(chunk_count: usize, file_options: FileOptions) -> Result
             let write_buffer = buf_reader.fill_buf()?;
             counter += 1;
             if write_buffer.len() > 0 {
-                let mut new_filename: String = String::from("");
-                let suffix = FileSuffix::build(counter, suffix_length, numeric_suffix);
-                new_filename.insert_str(0, &suffix[..]);
-                new_filename.insert_str(0, &prefix[..]);
-
-                fs::write(new_filename, write_buffer).unwrap();
+                let new_filename = Filename::build(counter, suffix_length, numeric_suffix, prefix.clone());
+                let mut new_file = File::create(new_filename).unwrap();
+                new_file.write_all(write_buffer).unwrap();
             }
             write_buffer.len()
         };
@@ -234,13 +224,10 @@ fn split_by_line_count(line_count: usize, file_options: FileOptions) -> Result<(
 
             if i > 0 && i % line_count == 0 {
                 counter += 1;
-                let mut new_filename: String = String::from("");
-                let suffix = FileSuffix::build(counter, suffix_length, numeric_suffix);
-                new_filename.insert_str(0, &suffix[..]);
-                new_filename.insert_str(0, &prefix[..]);
-
+                let new_filename = Filename::build(counter, suffix_length, numeric_suffix, prefix.clone());
                 let contents = write_buffer.join("\n");
-                fs::write(new_filename, contents).unwrap();
+                let mut new_file = File::create(new_filename).unwrap();
+                new_file.write_all(contents.as_bytes()).unwrap();
                 write_buffer = vec![];
             }
         }
@@ -248,13 +235,10 @@ fn split_by_line_count(line_count: usize, file_options: FileOptions) -> Result<(
 
     if write_buffer.len() > 0 {
         counter += 1;
-        let mut new_filename: String = String::from("");
-        let suffix = FileSuffix::build(counter, suffix_length, numeric_suffix);
-        new_filename.insert_str(0, &suffix[..]);
-        new_filename.insert_str(0, &prefix[..]);
-
+        let new_filename = Filename::build(counter, suffix_length, numeric_suffix, prefix);
         let contents = write_buffer.join("\n");
-        fs::write(new_filename, contents).unwrap();
+        let mut new_file = File::create(new_filename).unwrap();
+        new_file.write_all(contents.as_bytes()).unwrap();
     }
     Ok(())
 }
