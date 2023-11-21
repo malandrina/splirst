@@ -284,12 +284,15 @@ mod tests {
         let expected_file_1_size = expected_file_1.metadata().unwrap().len().try_into().unwrap();
         let expected_file_2_size = expected_file_2.metadata().unwrap().len().try_into().unwrap();
 
-        assert_eq!(file_size/chunk_count, expected_file_1_size);
-        assert_eq!(file_size/chunk_count, expected_file_2_size);
+        let result = std::panic::catch_unwind(|| {
+            assert_eq!(file_size/chunk_count, expected_file_1_size);
+            assert_eq!(file_size/chunk_count, expected_file_2_size)
+        });
 
-        // TODO: ensure these lines are always executed even if the assertions fail
         fs::remove_file("aaa").unwrap();
         fs::remove_file("aab").unwrap();
+
+        assert!(result.is_ok());
     }
 
     #[test]
@@ -308,12 +311,15 @@ mod tests {
         let expected_file_1_size = expected_file_1.metadata().unwrap().len().try_into().unwrap();
         let expected_file_2_size = expected_file_2.metadata().unwrap().len().try_into().unwrap();
 
-        assert_eq!(64137, expected_file_1_size);
-        assert_eq!(58773, expected_file_2_size);
+        let result = std::panic::catch_unwind(|| {
+            assert_eq!(64137, expected_file_1_size);
+            assert_eq!(58773, expected_file_2_size);
+        });
 
-        // TODO: ensure these lines are always executed even if the assertions fail
         fs::remove_file("baa").unwrap();
         fs::remove_file("bab").unwrap();
+
+        assert!(result.is_ok());
     }
 
     #[test]
@@ -335,16 +341,19 @@ mod tests {
         let result_file_1_size = result_file_1.metadata().unwrap().len().try_into().unwrap();
         let result_file_2_size = result_file_2.metadata().unwrap().len().try_into().unwrap();
 
-        assert_eq!(expected_file_1_size, result_file_1_size);
-        assert_eq!(expected_file_2_size, result_file_2_size);
+        let result = std::panic::catch_unwind(|| {
+            assert_eq!(expected_file_1_size, result_file_1_size);
+            assert_eq!(expected_file_2_size, result_file_2_size);
+        });
 
-        // TODO: ensure these lines are always executed even if the assertions fail
         fs::remove_file("caa").unwrap();
         fs::remove_file("cab").unwrap();
+
+        assert!(result.is_ok());
     }
 
     #[test]
-    fn split_file_by_pattern() {
+    fn split_file_by_pattern() -> () {
         let file = File::open("./src/test/fixtures/war-and-peace-excerpt.txt").unwrap();
         let prefix = String::from("d");
         let suffix_length = 2;
@@ -361,11 +370,14 @@ mod tests {
         let result_file_1_size = result_file_1.metadata().unwrap().len().try_into().unwrap();
         let result_file_2_size = result_file_2.metadata().unwrap().len().try_into().unwrap();
 
-        assert_eq!(expected_file_1_size, result_file_1_size);
-        assert_eq!(expected_file_2_size, result_file_2_size);
+        let result = std::panic::catch_unwind(|| {
+            assert_eq!(expected_file_1_size, result_file_1_size);
+            assert_eq!(expected_file_2_size, result_file_2_size)
+        });
 
-        // TODO: ensure these lines are always executed even if the assertions fail
         fs::remove_file("daa").unwrap();
         fs::remove_file("dab").unwrap();
+
+        assert!(result.is_ok());
     }
 }
