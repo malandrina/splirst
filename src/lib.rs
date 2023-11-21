@@ -277,7 +277,7 @@ mod tests {
 
     #[test]
     fn split_file_by_chunk_count() {
-        let file = File::open("./src/test/fixtures/war-and-peace-excerpt.txt").unwrap();
+        let file = File::open("./tests/fixtures/war-and-peace-excerpt.txt").unwrap();
         let file_size = file.metadata().unwrap().len() as usize;
         let prefix = String::from("a");
         let chunk_count = 2;
@@ -303,7 +303,7 @@ mod tests {
 
     #[test]
     fn split_file_by_line_count() {
-        let file = File::open("./src/test/fixtures/war-and-peace-excerpt.txt").unwrap();
+        let file = File::open("./tests/fixtures/war-and-peace-excerpt.txt").unwrap();
         let prefix = String::from("b");
         let line_count = 546;
         let file_options = FileOptions { file, prefix, suffix_length: 2, numeric_suffix: false };
@@ -328,7 +328,7 @@ mod tests {
 
     #[test]
     fn split_file_by_byte_count() {
-        let file = File::open("./src/test/fixtures/war-and-peace-excerpt.txt").unwrap();
+        let file = File::open("./tests/fixtures/war-and-peace-excerpt.txt").unwrap();
         let file_size = file.metadata().unwrap().len() as usize;
         let prefix = String::from("c");
         let byte_count = 100000;
@@ -356,7 +356,7 @@ mod tests {
 
     #[test]
     fn split_file_by_pattern() -> () {
-        let file = File::open("./src/test/fixtures/war-and-peace-excerpt.txt").unwrap();
+        let file = File::open("./tests/fixtures/war-and-peace-excerpt.txt").unwrap();
         let prefix = String::from("d");
         let pattern = String::from("Lucca");
         let file_options = FileOptions { file, prefix, suffix_length: 2, numeric_suffix: false };
