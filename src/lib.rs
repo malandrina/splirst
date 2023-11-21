@@ -261,3 +261,111 @@ pub fn run(args: Arguments) -> Result<(), Box<dyn Error>> {
         split_by_line_count(args.line_count, file_options)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+
+    #[test]
+    fn split_file_by_chunk_count() {
+        let file = File::open("./src/test/fixtures/war-and-peace-excerpt.txt").unwrap();
+        let file_size = file.metadata().unwrap().len() as usize;
+        let prefix = String::from("a");
+        let suffix_length = 2;
+        let numeric_suffix = false;
+        let chunk_count = 2;
+        let file_options = FileOptions { file, prefix, suffix_length, numeric_suffix };
+
+        let _ = split_by_chunk_count(chunk_count, file_options);
+
+        let expected_file_1 = File::open("aaa").unwrap();
+        let expected_file_2 = File::open("aab").unwrap();
+        let expected_file_1_size = expected_file_1.metadata().unwrap().len().try_into().unwrap();
+        let expected_file_2_size = expected_file_2.metadata().unwrap().len().try_into().unwrap();
+
+        assert_eq!(file_size/chunk_count, expected_file_1_size);
+        assert_eq!(file_size/chunk_count, expected_file_2_size);
+
+        // TODO: ensure these lines are always executed even if the assertions fail
+        fs::remove_file("aaa").unwrap();
+        fs::remove_file("aab").unwrap();
+    }
+
+    #[test]
+    fn split_file_by_line_count() {
+        let file = File::open("./src/test/fixtures/war-and-peace-excerpt.txt").unwrap();
+        let prefix = String::from("b");
+        let suffix_length = 2;
+        let numeric_suffix = false;
+        let line_count = 546;
+        let file_options = FileOptions { file, prefix, suffix_length, numeric_suffix };
+
+        let _ = split_by_line_count(line_count, file_options);
+
+        let expected_file_1 = File::open("baa").unwrap();
+        let expected_file_2 = File::open("bab").unwrap();
+        let expected_file_1_size = expected_file_1.metadata().unwrap().len().try_into().unwrap();
+        let expected_file_2_size = expected_file_2.metadata().unwrap().len().try_into().unwrap();
+
+        assert_eq!(64137, expected_file_1_size);
+        assert_eq!(58773, expected_file_2_size);
+
+        // TODO: ensure these lines are always executed even if the assertions fail
+        fs::remove_file("baa").unwrap();
+        fs::remove_file("bab").unwrap();
+    }
+
+    #[test]
+    fn split_file_by_byte_count() {
+        let file = File::open("./src/test/fixtures/war-and-peace-excerpt.txt").unwrap();
+        let file_size = file.metadata().unwrap().len() as usize;
+        let prefix = String::from("c");
+        let suffix_length = 2;
+        let numeric_suffix = false;
+        let byte_count = 100000;
+        let file_options = FileOptions { file, prefix, suffix_length, numeric_suffix };
+        let expected_file_1_size = byte_count;
+        let expected_file_2_size = file_size - byte_count;
+
+        let _ = split_by_byte_count(byte_count as u64, file_options);
+
+        let result_file_1 = File::open("caa").unwrap();
+        let result_file_2 = File::open("cab").unwrap();
+        let result_file_1_size = result_file_1.metadata().unwrap().len().try_into().unwrap();
+        let result_file_2_size = result_file_2.metadata().unwrap().len().try_into().unwrap();
+
+        assert_eq!(expected_file_1_size, result_file_1_size);
+        assert_eq!(expected_file_2_size, result_file_2_size);
+
+        // TODO: ensure these lines are always executed even if the assertions fail
+        fs::remove_file("caa").unwrap();
+        fs::remove_file("cab").unwrap();
+    }
+
+    #[test]
+    fn split_file_by_pattern() {
+        let file = File::open("./src/test/fixtures/war-and-peace-excerpt.txt").unwrap();
+        let prefix = String::from("d");
+        let suffix_length = 2;
+        let numeric_suffix = false;
+        let pattern = String::from("Lucca");
+        let file_options = FileOptions { file, prefix, suffix_length, numeric_suffix };
+        let expected_file_1_size = 35999;
+        let expected_file_2_size = 86911;
+
+        let _ = split_by_pattern(pattern, file_options);
+
+        let result_file_1 = File::open("daa").unwrap();
+        let result_file_2 = File::open("dab").unwrap();
+        let result_file_1_size = result_file_1.metadata().unwrap().len().try_into().unwrap();
+        let result_file_2_size = result_file_2.metadata().unwrap().len().try_into().unwrap();
+
+        assert_eq!(expected_file_1_size, result_file_1_size);
+        assert_eq!(expected_file_2_size, result_file_2_size);
+
+        // TODO: ensure these lines are always executed even if the assertions fail
+        fs::remove_file("daa").unwrap();
+        fs::remove_file("dab").unwrap();
+    }
+}
