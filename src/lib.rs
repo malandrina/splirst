@@ -17,6 +17,32 @@ static ASCII_LOWER: [char; 26] = [
 static DEFAULT_SUFFIX_FIRST_CHAR: char = 'a';
 static DEFAULT_SUFFIX_LENGTH: usize = 2;
 
+struct ByteCount;
+
+impl ByteCount {
+    pub fn from_arg_value(value: &std::ffi::OsStr) -> u64 {
+        let b_to_gb_multiplier = (1.0/f32::powi(10u32 as f32, -9)) as u64;
+        let unit_multipliers = HashMap::from([
+            ("k", 1000),
+            ("m", 1000000),
+            ("g", b_to_gb_multiplier)
+        ]);
+
+        let mut value = value.to_str().unwrap().split("").collect::<Vec<&str>>();
+        value.retain(|i| i.len() > 0);
+        let unit_index = value.len() - 1;
+        let unit = value[unit_index];
+        let case_insensitive_unit = unit.to_lowercase();
+        let unit_key = &case_insensitive_unit[..];
+        let multiplier = unit_multipliers[unit_key];
+
+        value.remove(unit_index);
+        let value = value.join("").parse::<u64>().unwrap();
+        let byte_count = value * multiplier;
+        byte_count
+    }
+}
+
 struct Filename;
 
 impl Filename {
@@ -75,25 +101,7 @@ impl clap::builder::TypedValueParser for ByteCountValueParser {
         _arg: Option<&clap::Arg>,
         value: &std::ffi::OsStr,
     ) -> Result<Self::Value, clap::Error> {
-        let b_to_gb_multiplier = (1.0/f32::powi(10u32 as f32, -9)) as u64;
-        let unit_multipliers = HashMap::from([
-            ("k", 1000),
-            ("m", 1000000),
-            ("g", b_to_gb_multiplier)
-        ]);
-
-        let mut value = value.to_str().unwrap().split("").collect::<Vec<&str>>();
-        value.retain(|i| i.len() > 0);
-        let unit_index = value.len() - 1;
-        let unit = value[unit_index];
-        let case_insensitive_unit = unit.to_lowercase();
-        let unit_key = &case_insensitive_unit[..];
-        let multiplier = unit_multipliers[unit_key];
-
-        value.remove(unit_index);
-        let value = value.join("").parse::<u64>().unwrap();
-        let byte_count = value * multiplier;
-
+        let byte_count = ByteCount::from_arg_value(value);
         Ok(byte_count)
     }
 }
@@ -407,5 +415,38 @@ mod tests {
         let filename = Filename::build(file_number, suffix_length, numeric_suffix, prefix);
 
         assert_eq!("x00", filename)
+    }
+
+    #[test]
+    fn byte_count_from_kb_arg_value() -> () {
+        let arg_value_str = String::from("100K");
+        let mut arg_value = std::ffi::OsString::with_capacity(arg_value_str.len());
+        arg_value.push(arg_value_str);
+
+        let result = ByteCount::from_arg_value(&arg_value);
+
+        assert_eq!(100000, result);
+    }
+
+    #[test]
+    fn byte_count_from_mb_arg_value() -> () {
+        let arg_value_str = String::from("1M");
+        let mut arg_value = std::ffi::OsString::with_capacity(arg_value_str.len());
+        arg_value.push(arg_value_str);
+
+        let result = ByteCount::from_arg_value(&arg_value);
+
+        assert_eq!(1000000, result);
+    }
+
+    #[test]
+    fn byte_count_from_gb_arg_value() -> () {
+        let arg_value_str = String::from("1G");
+        let mut arg_value = std::ffi::OsString::with_capacity(arg_value_str.len());
+        arg_value.push(arg_value_str);
+
+        let result = ByteCount::from_arg_value(&arg_value);
+
+        assert_eq!(1000000000, result);
     }
 }
