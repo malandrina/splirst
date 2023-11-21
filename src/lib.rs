@@ -386,6 +386,18 @@ mod tests {
     }
 
     #[test]
+    fn alphabetic_filename_suffix_file_number_greater_than_ascii_lower_chars_count() -> () {
+        let file_number = ASCII_LOWER.len() + 1;
+        let suffix_length = 2;
+        let numeric_suffix = false;
+        let prefix = String::from("x");
+
+        let filename = Filename::build(file_number, suffix_length, numeric_suffix, prefix);
+
+        assert_eq!("xba", filename)
+    }
+
+    #[test]
     fn numeric_filename_suffix() -> () {
         let file_number = 1;
         let suffix_length = 2;
