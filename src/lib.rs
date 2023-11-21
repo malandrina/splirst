@@ -1,6 +1,7 @@
 use regex::Regex;
 use std::collections::HashMap;
 use std::error::Error;
+use std::ffi::{OsStr};
 use std::fs::{File};
 use std::io::{self, BufRead, Write};
 
@@ -20,7 +21,7 @@ static DEFAULT_SUFFIX_LENGTH: usize = 2;
 struct ByteCount;
 
 impl ByteCount {
-    pub fn from_arg_value(value: &std::ffi::OsStr) -> u64 {
+    pub fn from_arg_value(value: &OsStr) -> u64 {
         let b_to_gb_multiplier = (1.0/f32::powi(10u32 as f32, -9)) as u64;
         let unit_multipliers = HashMap::from([
             ("k", 1000),
@@ -99,7 +100,7 @@ impl clap::builder::TypedValueParser for ByteCountValueParser {
         &self,
         _cmd: &clap::Command,
         _arg: Option<&clap::Arg>,
-        value: &std::ffi::OsStr,
+        value: &OsStr,
     ) -> Result<Self::Value, clap::Error> {
         let byte_count = ByteCount::from_arg_value(value);
         Ok(byte_count)
@@ -274,6 +275,7 @@ pub fn run(args: Arguments) -> Result<(), Box<dyn Error>> {
 mod tests {
     use super::*;
     use std::fs;
+    use std::ffi::OsString;
 
     #[test]
     fn split_file_by_chunk_count() {
@@ -420,7 +422,7 @@ mod tests {
     #[test]
     fn byte_count_from_kb_arg_value() -> () {
         let arg_value_str = String::from("100K");
-        let mut arg_value = std::ffi::OsString::with_capacity(arg_value_str.len());
+        let mut arg_value = OsString::with_capacity(arg_value_str.len());
         arg_value.push(arg_value_str);
 
         let result = ByteCount::from_arg_value(&arg_value);
@@ -431,7 +433,7 @@ mod tests {
     #[test]
     fn byte_count_from_mb_arg_value() -> () {
         let arg_value_str = String::from("1M");
-        let mut arg_value = std::ffi::OsString::with_capacity(arg_value_str.len());
+        let mut arg_value = OsString::with_capacity(arg_value_str.len());
         arg_value.push(arg_value_str);
 
         let result = ByteCount::from_arg_value(&arg_value);
@@ -442,7 +444,7 @@ mod tests {
     #[test]
     fn byte_count_from_gb_arg_value() -> () {
         let arg_value_str = String::from("1G");
-        let mut arg_value = std::ffi::OsString::with_capacity(arg_value_str.len());
+        let mut arg_value = OsString::with_capacity(arg_value_str.len());
         arg_value.push(arg_value_str);
 
         let result = ByteCount::from_arg_value(&arg_value);
