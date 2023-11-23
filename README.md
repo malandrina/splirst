@@ -26,7 +26,7 @@ Options:
 ## Benchmarking performance
 
 |File size|File type|Split method|`splirst`|`split`|
-|--------|------------|--------|------|
+|--------|----------|------------|--------|------|
 |15G|SQL|`-n10`|7.9s|10s|
 |15G|SQL|`-b1G`|7.3s|6.2s|
 |15G|SQL|`-pCREATE`|52.5s|3:34.7m|
