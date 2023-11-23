@@ -110,20 +110,20 @@ impl clap::builder::TypedValueParser for ByteCountValueParser {
 #[derive(Parser,Default,Debug)]
 pub struct Arguments {
     #[clap(short='a', long, default_value="2", value_parser=2..=13)]
-    suffix_length: i64,
+    pub suffix_length: i64,
     #[clap(short='d', long)]
-    numeric_suffix: bool,
+    pub numeric_suffix: bool,
     #[clap(short, long, default_value="1000", group="method")]
-    line_count: usize,
+    pub line_count: usize,
     #[clap(short='n', long, group="method", value_parser=0..=676)]
-    chunk_count: Option<i64>,
+    pub chunk_count: Option<i64>,
     #[clap(short, long, group="method", value_parser=ByteCountValueParser)]
-    byte_count: Option<u64>,
+    pub byte_count: Option<u64>,
     #[clap(short, long, group="method")]
-    pattern: Option<String>,
-    file_path: String,
+    pub pattern: Option<String>,
+    pub file_path: String,
     #[clap(default_value="x")]
-    prefix: String,
+    pub prefix: String,
 }
 
 fn split_by_byte_count(byte_count: u64, file_options: FileOptions) -> Result<(), Box<dyn Error>> {
@@ -274,114 +274,7 @@ pub fn run(args: Arguments) -> Result<(), Box<dyn Error>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::fs;
     use std::ffi::OsString;
-
-    #[test]
-    fn split_file_by_chunk_count() {
-        let file = File::open("./tests/fixtures/war-and-peace-excerpt.txt").unwrap();
-        let file_size = file.metadata().unwrap().len() as usize;
-        let prefix = String::from("a");
-        let chunk_count = 2;
-        let file_options = FileOptions { file, prefix, suffix_length: 2, numeric_suffix: false };
-
-        let _ = split_by_chunk_count(chunk_count, file_options);
-
-        let expected_file_1 = File::open("aaa").unwrap();
-        let expected_file_2 = File::open("aab").unwrap();
-        let expected_file_1_size = expected_file_1.metadata().unwrap().len().try_into().unwrap();
-        let expected_file_2_size = expected_file_2.metadata().unwrap().len().try_into().unwrap();
-
-        let result = std::panic::catch_unwind(|| {
-            assert_eq!(file_size/chunk_count, expected_file_1_size);
-            assert_eq!(file_size/chunk_count, expected_file_2_size)
-        });
-
-        fs::remove_file("aaa").unwrap();
-        fs::remove_file("aab").unwrap();
-
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn split_file_by_line_count() {
-        let file = File::open("./tests/fixtures/war-and-peace-excerpt.txt").unwrap();
-        let prefix = String::from("b");
-        let line_count = 546;
-        let file_options = FileOptions { file, prefix, suffix_length: 2, numeric_suffix: false };
-
-        let _ = split_by_line_count(line_count, file_options);
-
-        let expected_file_1 = File::open("baa").unwrap();
-        let expected_file_2 = File::open("bab").unwrap();
-        let expected_file_1_size = expected_file_1.metadata().unwrap().len().try_into().unwrap();
-        let expected_file_2_size = expected_file_2.metadata().unwrap().len().try_into().unwrap();
-
-        let result = std::panic::catch_unwind(|| {
-            assert_eq!(64137, expected_file_1_size);
-            assert_eq!(58773, expected_file_2_size);
-        });
-
-        fs::remove_file("baa").unwrap();
-        fs::remove_file("bab").unwrap();
-
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn split_file_by_byte_count() {
-        let file = File::open("./tests/fixtures/war-and-peace-excerpt.txt").unwrap();
-        let file_size = file.metadata().unwrap().len() as usize;
-        let prefix = String::from("c");
-        let byte_count = 100000;
-        let file_options = FileOptions { file, prefix, suffix_length: 2, numeric_suffix: false };
-        let expected_file_1_size = byte_count;
-        let expected_file_2_size = file_size - byte_count;
-
-        let _ = split_by_byte_count(byte_count as u64, file_options);
-
-        let result_file_1 = File::open("caa").unwrap();
-        let result_file_2 = File::open("cab").unwrap();
-        let result_file_1_size = result_file_1.metadata().unwrap().len().try_into().unwrap();
-        let result_file_2_size = result_file_2.metadata().unwrap().len().try_into().unwrap();
-
-        let result = std::panic::catch_unwind(|| {
-            assert_eq!(expected_file_1_size, result_file_1_size);
-            assert_eq!(expected_file_2_size, result_file_2_size);
-        });
-
-        fs::remove_file("caa").unwrap();
-        fs::remove_file("cab").unwrap();
-
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn split_file_by_pattern() -> () {
-        let file = File::open("./tests/fixtures/war-and-peace-excerpt.txt").unwrap();
-        let prefix = String::from("d");
-        let pattern = String::from("Lucca");
-        let file_options = FileOptions { file, prefix, suffix_length: 2, numeric_suffix: false };
-        let expected_file_1_size = 35999;
-        let expected_file_2_size = 86911;
-
-        let _ = split_by_pattern(pattern, file_options);
-
-        let result_file_1 = File::open("daa").unwrap();
-        let result_file_2 = File::open("dab").unwrap();
-        let result_file_1_size = result_file_1.metadata().unwrap().len().try_into().unwrap();
-        let result_file_2_size = result_file_2.metadata().unwrap().len().try_into().unwrap();
-
-        let result = std::panic::catch_unwind(|| {
-            assert_eq!(expected_file_1_size, result_file_1_size);
-            assert_eq!(expected_file_2_size, result_file_2_size)
-        });
-
-        fs::remove_file("daa").unwrap();
-        fs::remove_file("dab").unwrap();
-
-        assert!(result.is_ok());
-    }
 
     #[test]
     fn alphabetic_filename_suffix() -> () {
