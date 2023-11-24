@@ -1,8 +1,10 @@
 # splirst: A Rust implementation of `split`
 
+The most important thing to know about this implementation is that it's based on `split` circa 2013, which is old but happens to be the version that ships with MacOS.
+
 ## Installation
 
-Coming soon!
+Maybe someday! Honestly I can't recommend it, just use the current version of `split` and `csplit` in the GNU coreutils ([repo](https://github.com/coreutils/coreutils)).
 
 ## Usage
 
@@ -22,17 +24,3 @@ Options:
   -p, --pattern <PATTERN>
   -h, --help                           Print help
 ```
-
-## Benchmarking performance
-
-|File size|File type|Split method|`splirst`|`split`|
-|--------|----------|------------|--------|------|
-|15G|SQL|`-n10`|7.9s|10s|
-|15G|SQL|`-b1G`|7.3s|6.2s|
-|15G|SQL|`-pCREATE`|52.5s|3:34.7m|
-|97M|SQL|`-n10`|0.2s|0.05s|
-|97M|SQL|`-b50M`|0.3s|0.05s|
-|97M|SQL|`-pCREATE`|0.5s|1.4s|
-|128K|TXT|`-l500`|0.2s|0.01s|
-|128K|TXT|`-b100K`|0.2s|0.004s|
-|128K|TXT|`-n10`|0.2s|0.05s|
