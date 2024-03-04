@@ -1,8 +1,8 @@
 use regex::Regex;
 use std::collections::HashMap;
 use std::error::Error;
-use std::ffi::{OsStr};
-use std::fs::{File};
+use std::ffi::OsStr;
+use std::fs::File;
 use std::io::{self, BufRead, Write};
 
 use clap::Parser;
